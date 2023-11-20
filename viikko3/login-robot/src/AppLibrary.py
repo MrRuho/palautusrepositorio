@@ -30,12 +30,12 @@ class AppLibrary:
         self._app.run()
 
     def create_user(self, username, password):
-        self._user_service.create_user(username, password)
-    
-    def valid_username(self, username, password):
-        if len(username) < 3 or len(password) < 8:
-            self.log("Liian lyhyt nimi tai salasana")
+        if not username.isalpha() or len(username) < 3:
+            self._io.write("Virheellinen käyttäjänimi")
+        elif not (any(c.isdigit() for c in password) and any(c.isalpha() for c in password) and len(password) >= 8):
+            self._io.write("Virheellinen salasana")
         else:
-            self.log("Käyttäjänimi ja salasana ovat kelvolliset")
+            self._io.write("Kelvollinen käyttäjänimi ja salasana")
+            self._user_service.create_user(username, password)
 
 
