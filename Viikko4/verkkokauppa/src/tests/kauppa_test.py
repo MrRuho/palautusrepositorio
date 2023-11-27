@@ -163,6 +163,60 @@ class TestKauppa(unittest.TestCase):
         kauppa.tilimaksu("pekka", "12345")
 
         pankki_mock.tilisiirto.assert_called_once_with("pekka", 42, "12345", "33333-44455", 5)
+    
 
-    def test_edellinen_asiointi_nollataan(self):
+    def test_kaksi_asiakasta(self):
+        pankki_mock = Mock()
+        viitegeneraattori_mock = Mock()
+        asiakkaat_mock = Mock()
+        tilinumerot_moc = Mock()
+
+        # Luodaan pari viitettä
+        viitegeneraattori_mock.uusi.side_effect = [1, 2]
+        #Luodaan pari asiakasta
+        asiakkaat_mock.uusi.side_effect = ["Pekka", "Matti"]
+        #Luodaan pari tilinumeroa
+        tilinumerot_moc.uusi.side_effect = ["12345", "54321"]
+
+        varasto_mock = Mock()
+
+        def varasto_saldo(tuote_id):
+            if tuote_id == 1:
+                return 10
+            elif tuote_id == 2:
+                return 10
+        
+        def varasto_hae_tuote(tuote_id):
+            if tuote_id == 1:
+                return Tuote(1, "maito", 5)
+            elif tuote_id == 2:
+                return Tuote(2, "Hevonen", 5)
+            
+        def tilisiirto(nimi,viite,tilinumero, tili_numero, summa):
+            if nimi == "Pekka" and tilinumero == "12345" and viite == 1 and tili_numero == "33333-44455" and summa == 5:
+                return
+            elif nimi == "Matti" and tilinumero == "54321" and viite == 2 and tili_numero == "33333-44455" and summa == 5:
+                return
+            
+        varasto_mock.saldo.side_effect = varasto_saldo
+        varasto_mock.hae_tuote.side_effect = varasto_hae_tuote
+        pankki_mock.tilisiirto.side_effect = tilisiirto
+
+        kauppa = Kauppa(varasto_mock, pankki_mock, viitegeneraattori_mock)
+
+        #tehdään ensimmäinen ostos
+        kauppa.aloita_asiointi()
+        kauppa.lisaa_koriin(1)
+        kauppa.tilimaksu(asiakkaat_mock.uusi(), tilinumerot_moc.uusi())
+
+        #tehdään toinen ostos
+        kauppa.aloita_asiointi()
+        kauppa.lisaa_koriin(1)
+        kauppa.tilimaksu(asiakkaat_mock.uusi(), tilinumerot_moc.uusi())
+
+        #Tarkistetaan että kutsut on tehty.
+        pankki_mock.tilisiirto.assert_has_calls([
+            unittest.mock.call("Pekka", 1, "12345", "33333-44455", 5),
+            unittest.mock.call("Matti", 2, "54321", "33333-44455", 5)
+        ])
     
