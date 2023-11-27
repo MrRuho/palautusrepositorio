@@ -1,4 +1,3 @@
-# tag testi
 # palautusrepositorio
 Ohjelmistotuotanto tehtävät
 
